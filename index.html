@@ -818,7 +818,7 @@ const ID_QUESTIONS = {
 
 // ==================== GAME STATE ====================
 let state = {
-  defaultApiKey: 'AIzaSyCFZ8nkBr4jsmjetjh1nFAws81FufUOVwI',
+  defaultApiKey: 'AIzaSyBfbM_lhFJC03ccWF0a_LsfNeYNTOlJGNE',
   apiKey: '',
   selectedTopic: null,
   selectedLevel: 1,
@@ -872,16 +872,23 @@ document.getElementById('apiKey').addEventListener('input', checkCanStart);
 function startGame() {
   const inputKey = document.getElementById('apiKey').value.trim();
   
-  // If input is exactly "-d", use the default key. 
-  // Otherwise, use whatever they typed.
+  // If input is exactly "-d", decode the default key. 
+  // Otherwise, use the key the user typed manually.
   if (inputKey === "-d") {
-    state.apiKey = state.defaultApiKey;
+    try {
+      state.apiKey = atob(state.defaultApiKey);
+    } catch (e) {
+      console.error("Base64 Decode Error: Check your defaultApiKey string.");
+      alert("System Error: Failed to load default credentials.");
+      return;
+    }
   } else {
     state.apiKey = inputKey;
   }
 
   const topic = TOPICS.find(t => t.id === state.selectedTopic);
   
+  // Load questions based on selected level
   if (state.selectedLevel === 1) {
     state.questions = shuffle([...topic.questions]);
   } else {
@@ -889,10 +896,12 @@ function startGame() {
     state.questions = shuffle([...idQs]);
   }
 
+  // Reset game state
   state.currentIndex = 0;
   state.score = 0;
   state.answered = false;
 
+  // Transition to Quiz Screen
   showScreen('quiz');
   renderQuestion();
 }
