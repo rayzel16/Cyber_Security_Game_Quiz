@@ -971,7 +971,7 @@ async function submitIdentification() {
 // ==================== GEMINI API INTEGRATION ====================
 
 async function callGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
   
   const response = await fetch(url, {
     method: "POST",
