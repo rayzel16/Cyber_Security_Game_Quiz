@@ -879,8 +879,6 @@ function startGame() {
       state.apiKey = atob(state.defaultApiKey);
     } catch (e) {
       console.error("Base64 Decode Error: Check your defaultApiKey string.");
-      alert("System Error: Failed to load default credentials.");
-      return;
     }
   } else {
     state.apiKey = inputKey;
