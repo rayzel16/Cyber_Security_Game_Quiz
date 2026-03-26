@@ -970,21 +970,41 @@ async function submitIdentification() {
 
 // ==================== GEMINI API INTEGRATION ====================
 
+// ==================== UPDATED GEMINI API INTEGRATION ====================
+
 async function callGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
+  // 1. Updated to the new Gemini 3.1 Pro Preview model
+  const model = "gemini-3.1-pro-preview";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      // 2. Using the preferred x-goog-api-key header instead of a URL parameter
+      "x-goog-api-key": state.apiKey 
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
+      contents: [{ 
+        parts: [{ text: prompt }] 
+      }]
     })
   });
 
-  if (!response.ok) throw new Error('API request failed');
+  if (!response.ok) {
+    const errorBody = await response.json();
+    console.error("Gemini API Error:", errorBody);
+    throw new Error(`API Error ${response.status}: ${errorBody.error?.message || 'Unknown error'}`);
+  }
   
   const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
+  
+  // 3. Extracting response text from the Gemini 3.1 response structure
+  if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+    return data.candidates[0].content.parts[0].text;
+  } else {
+    throw new Error("Unexpected API response format");
+  }
 }
 
 async function showFeedback(isCorrect, correctAnswer, question, chosenAnswer) {
