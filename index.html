@@ -1040,7 +1040,7 @@ async function showFeedback(isCorrect, correctAnswer, question, chosenAnswer) {
   header.className = `feedback-header ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
   emoji.textContent = isCorrect ? '🎉' : '😢';
   title.textContent = isCorrect ? 'CORRECT!' : 'WRONG!';
-  text.innerHTML = '<span class="loading-text">// Gemini AI is analyzing your answer...</span>';
+  text.innerHTML = '<span class="loading-text">// Zeal is analyzing your answer...</span>';
 
   document.getElementById('nextBtn').style.display = 'block';
 
