@@ -818,6 +818,7 @@ const ID_QUESTIONS = {
 
 // ==================== GAME STATE ====================
 let state = {
+  defaultApiKey: 'AIzaSyBfbM_lhFJC03ccWF0a_LsfNeYNTOlJGNE',
   apiKey: '',
   selectedTopic: null,
   selectedLevel: 1,
@@ -831,7 +832,7 @@ let state = {
 function init() {
   // Update the label for Gemini
   document.querySelector('.api-box label').textContent = "🔑 GOOGLE GEMINI API KEY";
-  document.getElementById('apiKey').placeholder = "AIza...";
+  document.getElementById('apiKey').placeholder = "Enter Gemini API Key or type '-d' for default";
 
   const grid = document.getElementById('topicsGrid');
   TOPICS.forEach(t => {
@@ -857,16 +858,37 @@ function selectLevel(lvl) {
 }
 
 function checkCanStart() {
-  const key = document.getElementById('apiKey').value.trim();
-  document.getElementById('startBtn').disabled = !(state.selectedTopic && key);
+  const input = document.getElementById('apiKey').value.trim();
+  const topicSelected = !!state.selectedTopic;
+  
+  const isDefaultCommand = (input === "-d");
+  const hasProvidedKey = (input.length > 10);
+
+  document.getElementById('startBtn').disabled = !(topicSelected && (isDefaultCommand || hasProvidedKey));
 }
 
 document.getElementById('apiKey').addEventListener('input', checkCanStart);
 
 function startGame() {
-  state.apiKey = document.getElementById('apiKey').value.trim();
-  const topic = TOPICS.find(t => t.id === state.selectedTopic);
+  const inputKey = document.getElementById('apiKey').value.trim();
+  
+  // If input is exactly "-d", decode the default key. 
+  // Otherwise, use the key the user typed manually.
+  if (inputKey === "-d") {
+    try {
+      state.apiKey = atob(state.defaultApiKey);
+    } catch (e) {
+      console.error("Base64 Decode Error: Check your defaultApiKey string.");
+      alert("System Error: Failed to load default credentials.");
+      return;
+    }
+  } else {
+    state.apiKey = inputKey;
+  }
 
+  const topic = TOPICS.find(t => t.id === state.selectedTopic);
+  
+  // Load questions based on selected level
   if (state.selectedLevel === 1) {
     state.questions = shuffle([...topic.questions]);
   } else {
@@ -874,10 +896,12 @@ function startGame() {
     state.questions = shuffle([...idQs]);
   }
 
+  // Reset game state
   state.currentIndex = 0;
   state.score = 0;
   state.answered = false;
 
+  // Transition to Quiz Screen
   showScreen('quiz');
   renderQuestion();
 }
@@ -970,21 +994,40 @@ async function submitIdentification() {
 
 // ==================== GEMINI API INTEGRATION ====================
 
+// ==================== UPDATED GEMINI API INTEGRATION ====================
+
 async function callGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
+  // 1. Updated to the new Gemini 3.1 Pro Preview model
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent";
   
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      // 2. Using the preferred x-goog-api-key header instead of a URL parameter
+      "x-goog-api-key": state.apiKey 
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
+      contents: [{ 
+        parts: [{ text: prompt }] 
+      }]
     })
   });
 
-  if (!response.ok) throw new Error('API request failed');
+  if (!response.ok) {
+    const errorBody = await response.json();
+    console.error("Gemini API Error:", errorBody);
+    throw new Error(`API Error ${response.status}: ${errorBody.error?.message || 'Unknown error'}`);
+  }
   
   const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
+  
+  // 3. Extracting response text from the Gemini 3.1 response structure
+  if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+    return data.candidates[0].content.parts[0].text;
+  } else {
+    throw new Error("Unexpected API response format");
+  }
 }
 
 async function showFeedback(isCorrect, correctAnswer, question, chosenAnswer) {
