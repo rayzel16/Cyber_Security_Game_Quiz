@@ -818,6 +818,7 @@ const ID_QUESTIONS = {
 
 // ==================== GAME STATE ====================
 let state = {
+  defaultApiKey: 'AIzaSyCFZ8nkBr4jsmjetjh1nFAws81FufUOVwI',
   apiKey: '',
   selectedTopic: null,
   selectedLevel: 1,
@@ -831,7 +832,7 @@ let state = {
 function init() {
   // Update the label for Gemini
   document.querySelector('.api-box label').textContent = "🔑 GOOGLE GEMINI API KEY";
-  document.getElementById('apiKey').placeholder = "AIza...";
+  document.getElementById('apiKey').placeholder = "Enter Gemini API Key or type '-d' for default";
 
   const grid = document.getElementById('topicsGrid');
   TOPICS.forEach(t => {
@@ -857,16 +858,30 @@ function selectLevel(lvl) {
 }
 
 function checkCanStart() {
-  const key = document.getElementById('apiKey').value.trim();
-  document.getElementById('startBtn').disabled = !(state.selectedTopic && key);
+  const input = document.getElementById('apiKey').value.trim();
+  const topicSelected = !!state.selectedTopic;
+  
+  const isDefaultCommand = (input === "-d");
+  const hasProvidedKey = (input.length > 10);
+
+  document.getElementById('startBtn').disabled = !(topicSelected && (isDefaultCommand || hasProvidedKey));
 }
 
 document.getElementById('apiKey').addEventListener('input', checkCanStart);
 
 function startGame() {
-  state.apiKey = document.getElementById('apiKey').value.trim();
-  const topic = TOPICS.find(t => t.id === state.selectedTopic);
+  const inputKey = document.getElementById('apiKey').value.trim();
+  
+  // If input is exactly "-d", use the default key. 
+  // Otherwise, use whatever they typed.
+  if (inputKey === "-d") {
+    state.apiKey = state.defaultApiKey;
+  } else {
+    state.apiKey = inputKey;
+  }
 
+  const topic = TOPICS.find(t => t.id === state.selectedTopic);
+  
   if (state.selectedLevel === 1) {
     state.questions = shuffle([...topic.questions]);
   } else {
