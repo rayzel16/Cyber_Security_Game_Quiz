@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberQuest – Security Quiz Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #030712;
+    --surface: #0d1117;
+    --surface2: #161b22;
+    --border: #21262d;
+    --cyan: #00f5ff;
+    --green: #39ff14;
+    --red: #ff2d55;
+    --yellow: #ffd60a;
+    --purple: #bf5af2;
+    --text: #e6edf3;
+    --muted: #7d8590;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .screen { display:none; position:relative; z-index:1; }
+  .screen.active { display:flex; }
+
+  /* ========== HOME SCREEN ========== */
+  #home {
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:2rem;
+    text-align:center;
+  }
+
+  .logo-wrap {
+    margin-bottom: 2rem;
+    animation: floatY 3s ease-in-out infinite;
+  }
+
+  @keyframes floatY {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .logo-icon {
+    font-size: 5rem;
+    filter: drop-shadow(0 0 20px var(--cyan));
+  }
+
+  .game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px rgba(0,245,255,0.4));
+  }
+
+  .game-subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--muted);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    letter-spacing: 0.2em;
+  }
+
+  .api-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    width: 100%;
+    max-width: 480px;
+    text-align: left;
+  }
+
+  .api-box label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--cyan);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .api-box input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-box input:focus { border-color: var(--cyan); }
+
+  .api-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+
+  .topics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 700px;
+    margin: 1.5rem 0;
+  }
+
+  .topic-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .topic-card:hover, .topic-card.selected {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,245,255,0.15);
+    transform: translateY(-2px);
+  }
+
+  .topic-card.selected {
+    background: rgba(0,245,255,0.08);
+  }
+
+  .topic-icon { font-size: 2rem; display:block; margin-bottom:0.5rem; }
+  .topic-name { font-size: 0.85rem; font-weight: 600; color: var(--text); line-height:1.3; }
+  .topic-count { font-size: 0.7rem; color: var(--muted); margin-top:0.25rem; font-family:'Share Tech Mono',monospace; }
+
+  .level-selector {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  .level-btn {
+    flex:1;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 200px;
+  }
+
+  .level-btn.selected {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0,245,255,0.2);
+  }
+
+  .start-btn {
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border: none;
+    border-radius: 50px;
+    padding: 1rem 3rem;
+    color: #000;
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 1rem;
+    box-shadow: 0 0 30px rgba(0,245,255,0.3);
+  }
+
+  .start-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 50px rgba(0,245,255,0.5);
+  }
+
+  .start-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ========== QUIZ SCREEN ========== */
+  #quiz {
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    max-width: 800px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .quiz-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .quiz-meta span { color: var(--cyan); }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    flex: 1;
+    margin: 0 1rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .score-badge {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    color: var(--yellow);
+    font-weight: 700;
+  }
+
+  .quiz-body {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topic-tag {
+    display: inline-block;
+    background: rgba(0,245,255,0.1);
+    border: 1px solid rgba(0,245,255,0.3);
+    border-radius: 50px;
+    padding: 0.3rem 1rem;
+    font-size: 0.75rem;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+  }
+
+  .level-tag {
+    display: inline-block;
+    background: rgba(191,90,242,0.1);
+    border: 1px solid rgba(191,90,242,0.3);
+    border-radius: 50px;
+    padding: 0.3rem 1rem;
+    font-size: 0.75rem;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--purple);
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+    margin-left: 0.5rem;
+  }
+
+  .question-text {
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+    color: var(--text);
+  }
+
+  .options-grid {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .option-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--cyan);
+    background: rgba(0,245,255,0.06);
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  .option-btn.correct {
+    border-color: var(--green);
+    background: rgba(57,255,20,0.1);
+    color: var(--green);
+  }
+
+  .option-btn.wrong {
+    border-color: var(--red);
+    background: rgba(255,45,85,0.1);
+    color: var(--red);
+  }
+
+  .option-letter {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* identification input */
+  .id-input-wrap {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .id-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .id-input:focus { border-color: var(--cyan); }
+
+  .submit-btn {
+    background: var(--cyan);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    color: #000;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .submit-btn:hover { opacity: 0.85; }
+
+  /* Feedback panel */
+  .feedback-panel {
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 0.5rem;
+    display: none;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(10px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  .feedback-panel.correct-fb {
+    background: rgba(57,255,20,0.08);
+    border: 1px solid rgba(57,255,20,0.3);
+  }
+
+  .feedback-panel.wrong-fb {
+    background: rgba(255,45,85,0.08);
+    border: 1px solid rgba(255,45,85,0.3);
+  }
+
+  .feedback-header {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .feedback-header.correct-fb { color: var(--green); }
+  .feedback-header.wrong-fb { color: var(--red); }
+
+  .feedback-emoji { font-size: 1.8rem; }
+
+  .feedback-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text);
+    opacity: 0.85;
+  }
+
+  .loading-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--cyan);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .next-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 0.75rem 2rem;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 1.5rem;
+    display: none;
+    letter-spacing: 0.05em;
+  }
+
+  .next-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* ========== RESULT SCREEN ========== */
+  #result {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .result-emoji {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    animation: floatY 2s ease-in-out infinite;
+  }
+
+  .result-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-score {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 8vw, 5rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--yellow), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 1rem 0;
+  }
+
+  .result-msg {
+    color: var(--muted);
+    font-size: 1.1rem;
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .action-btn {
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .action-btn.primary {
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border: none;
+    color: #000;
+    box-shadow: 0 0 20px rgba(0,245,255,0.3);
+  }
+
+  .action-btn.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .action-btn:hover { transform: scale(1.05); }
+
+  /* Scan line effect */
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+
+  .scanline {
+    position: fixed;
+    top:0; left:0; right:0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.1;
+    animation: scanline 4s linear infinite;
+    pointer-events: none;
+    z-index: 999;
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- HOME SCREEN -->
+<div id="home" class="screen active">
+  <div class="logo-wrap">
+    <div class="logo-icon">🛡️</div>
+  </div>
+  <div class="game-title">CYBER QUEST</div>
+  <div class="game-subtitle">// SECURITY KNOWLEDGE CHALLENGE //</div>
+
+  <div class="api-box">
+    <label>🔑 Gemini API KEY</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
+    <div class="api-note">Your key is used only in this browser session and never stored.</div>
+  </div>
+
+  <div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;font-family:'Share Tech Mono',monospace;">SELECT TOPIC</div>
+  <div class="topics-grid" id="topicsGrid"></div>
+
+  <div style="font-size:0.85rem;color:var(--muted);margin:1rem 0 0.5rem;font-family:'Share Tech Mono',monospace;">SELECT LEVEL</div>
+  <div class="level-selector">
+    <button class="level-btn selected" onclick="selectLevel(1)">⚡ Level 1 — Multiple Choice</button>
+    <button class="level-btn" onclick="selectLevel(2)">🧠 Level 2 — Identification</button>
+  </div>
+
+  <button class="start-btn" id="startBtn" onclick="startGame()" disabled>LAUNCH QUIZ →</button>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div id="quiz" class="screen">
+  <div class="quiz-header">
+    <div class="quiz-meta">Q <span id="qNum">1</span> / <span id="qTotal">10</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="score-badge">⭐ <span id="scoreDisplay">0</span></div>
+  </div>
+
+  <div class="quiz-body">
+    <div>
+      <span class="topic-tag" id="topicTag"></span>
+      <span class="level-tag" id="levelTag"></span>
+    </div>
+    <div class="question-text" id="questionText"></div>
+
+    <!-- Multiple choice -->
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <!-- Identification -->
+    <div class="id-input-wrap" id="idInputWrap" style="display:none;">
+      <input class="id-input" id="idInput" placeholder="Type your answer here..." />
+      <button class="submit-btn" onclick="submitIdentification()">SUBMIT</button>
+    </div>
+
+    <div class="feedback-panel" id="feedbackPanel">
+      <div class="feedback-header" id="feedbackHeader">
+        <span class="feedback-emoji" id="feedbackEmoji"></span>
+        <span id="feedbackTitle"></span>
+      </div>
+      <div class="feedback-text" id="feedbackText"></div>
+    </div>
+
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">NEXT QUESTION →</button>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="result" class="screen">
+  <div class="result-emoji" id="resultEmoji">🏆</div>
+  <div class="result-title" id="resultTitle">MISSION COMPLETE</div>
+  <div class="result-score" id="resultScore"></div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div class="result-actions">
+    <button class="action-btn primary" onclick="goHome()">🏠 HOME</button>
+    <button class="action-btn secondary" onclick="retryQuiz()">🔄 RETRY</button>
+  </div>
+</div>
+
+<script>
+// ==================== QUIZ DATA ====================
+const TOPICS = [
+  {
+    id: 'os',
+    name: 'Operating System Security',
+    icon: '💻',
+    color: '#00f5ff',
+    questions: [
+      { q: "What does Operating System (OS) Security primarily protect?", options: ["Only computer hardware","The operating system from threats and unauthorized access","Only internet connections","Only installed applications"], answer: "B" },
+      { q: "Which of the following is an example of an operating system?", options: ["Google Chrome","Microsoft Word","Microsoft Windows","Adobe Photoshop"], answer: "C" },
+      { q: "The OS is considered the core component because it manages?", options: ["Only applications","Hardware, applications, users, and network communication","Only network communication","Only user accounts"], answer: "B" },
+      { q: "Which layer involves software and programs running on top of the operating system?", options: ["Network Layer","Policy Layer","Application Layer","Hardware Layer"], answer: "C" },
+      { q: "Which of the following is a responsibility of OS security in the application layer?", options: ["Controlling application permissions","Building computer hardware","Installing cables","Designing websites"], answer: "A" },
+      { q: "Which layer focuses on administrative rules and configurations such as password policies?", options: ["Application Layer","Policy Layer","Hardware Layer","Internet Layer"], answer: "B" },
+      { q: "What does Confidentiality in the CIA Triad mean?", options: ["Systems remain accessible when needed","Data cannot be changed by unauthorized users","Protecting sensitive information from unauthorized access","Sharing data publicly"], answer: "C" },
+      { q: "Which of the following helps maintain Integrity in OS security?", options: ["File integrity monitoring","Installing games","Increasing internet speed","Removing antivirus software"], answer: "A" },
+      { q: "Which CIA Triad component ensures systems remain accessible when needed?", options: ["Confidentiality","Integrity","Availability","Authentication"], answer: "C" },
+      { q: "The WannaCry ransomware attack mainly affected which operating system?", options: ["Linux","macOS","Microsoft Windows","Android"], answer: "C" }
+    ]
+  },
+  {
+    id: 'risk',
+    name: 'Risk Management & Security Governance',
+    icon: '📊',
+    color: '#bf5af2',
+    questions: [
+      { q: "What is the primary goal of risk management in IT?", options: ["To eliminate all risks completely","To protect data and technology from threats like cyberattacks and system failures","To increase the number of security controls","To focus only on financial risks"], answer: "B" },
+      { q: "How is 'risk' defined?", options: ["A weakness that can be exploited","A danger that could cause harm","The chance something bad might happen","A security control failure"], answer: "C" },
+      { q: "Which of the following best describes a 'threat'?", options: ["A software flaw or weak password","The likelihood of financial loss","Any danger that could cause harm, like hackers or natural disasters","The impact of a security breach"], answer: "C" },
+      { q: "What is a 'vulnerability'?", options: ["The chance a risk will occur","A weakness that threats can exploit, such as software flaws or poor controls","A security policy","The result of a cyberattack"], answer: "B" },
+      { q: "Which two factors are used to prioritize risks?", options: ["Time and cost","Impact and likelihood","Threats and vulnerabilities","Prevention and detection"], answer: "B" },
+      { q: "What are the three main steps in the risk management process?", options: ["Planning, executing, reviewing","Identifying, assessing, treating and monitoring","Avoiding, reducing, transferring","Detection, response, recovery"], answer: "B" },
+      { q: "Which of the following is NOT one of the risk treatment strategies?", options: ["Avoiding","Reducing","Ignoring","Transferring"], answer: "C" },
+      { q: "What is the purpose of security governance?", options: ["To replace risk management","To set rules and practices that align security with business goals","To eliminate all cybersecurity threats","To focus only on compliance"], answer: "B" },
+      { q: "Which of the following is a popular security governance framework?", options: ["HTML5","Python","NIST Cybersecurity Framework","Microsoft Office"], answer: "C" },
+      { q: "Why is it important to monitor risks over time?", options: ["To increase the number of threats","To track risks and control measures as situations change","To avoid making decisions","To replace the need for policies"], answer: "B" }
+    ]
+  },
+  {
+    id: 'web',
+    name: 'Secure Web Engineering',
+    icon: '🌐',
+    color: '#39ff14',
+    questions: [
+      { q: "How does the shift from monolithic to microservices architectures primarily impact the system's attack surface?", options: ["It has no impact on the attack surface","It eliminates the need for edge security","It reduces the attack surface by centralizing security controls","It expands the attack surface due to increased connectivity and proliferation of exposed API endpoints"], answer: "D" },
+      { q: "Which component of the STRIDE threat modeling framework specifically addresses the risk of a user denying that they performed a specific high-value transaction?", options: ["Repudiation","Tampering","Spoofing","Information Disclosure"], answer: "A" },
+      { q: "What is the primary objective of 'Shift-Left' within a Secure SDLC?", options: ["To move security testing to Operate and Monitor phases","To ensure only developers are responsible for final releases","To replace manual code reviews with automated runtime tools","To integrate security testing and risk assessment at the earliest possible stages"], answer: "D" },
+      { q: "Which security testing methodology utilizes instrumentation agents inside the application for real-time analysis during execution?", options: ["SIEM","IAST","SAST","DAST"], answer: "B" },
+      { q: "Why are 'Trust Boundaries' critical during threat modeling?", options: ["They define physical server locations","They represent legal boundaries between partners","They determine session token expiration times","They identify where data transitions between different levels of access control"], answer: "D" },
+      { q: "Why is the principle of Least Privilege critical in web system design?", options: ["It improves network throughput","It restricts system access to only what users or components require","It ensures all users share the same permissions","It eliminates the need for authentication"], answer: "B" },
+      { q: "Why is attack surface management considered essential in Secure Web Engineering?", options: ["It reduces the number of potential entry points attackers can exploit","It replaces the need for vulnerability testing","It guarantees compliance with all regulations","It prevents users from accessing external resources"], answer: "A" },
+      { q: "Which mechanism is primarily responsible for mitigating injection attacks in web applications?", options: ["Strong password complexity requirements","Automated system patching processes","Network-level packet filtering rules","Structured input validation and parameterized queries"], answer: "D" },
+      { q: "In STRIDE, which category addresses unauthorized modification of system data?", options: ["Spoofing","Repudiation","Tampering","Information Disclosure"], answer: "C" },
+      { q: "How does Secure Web Engineering fundamentally differ from traditional application security?", options: ["It focuses primarily on patching vulnerabilities after deployment","It replaces authentication mechanisms with automated monitoring","It integrates security into system architecture and development processes","It prioritizes infrastructure over application-layer protections"], answer: "C" }
+    ]
+  },
+  {
+    id: 'netvuln',
+    name: 'Network Vulnerabilities & Ethics',
+    icon: '🔍',
+    color: '#ffd60a',
+    questions: [
+      { q: "What is a network vulnerability?", options: ["A type of firewall","A weakness that can be exploited by attackers","A security software","A network protocol"], answer: "B" },
+      { q: "Which of the following is NOT part of the CIA Triad?", options: ["Confidentiality","Integrity","Accessibility","Availability"], answer: "C" },
+      { q: "What does Confidentiality ensure?", options: ["Data is always available","Data is accurate","Data is only accessible to authorized users","Data is backed up"], answer: "C" },
+      { q: "Which is an example of an application layer vulnerability?", options: ["DDoS Attack","SQL Injection","ARP Spoofing","Firewall Misconfiguration"], answer: "B" },
+      { q: "What type of vulnerability involves default passwords and open ports?", options: ["Human Factors","Technical Vulnerabilities","Configuration Weaknesses","Policy Failures"], answer: "C" },
+      { q: "Which attack involves intercepting communication between two parties?", options: ["SQL Injection","DDoS","Man-in-the-Middle (MITM)","XSS"], answer: "C" },
+      { q: "What is the main goal of Integrity in cybersecurity?", options: ["Prevent system crashes","Ensure data is accurate and unaltered","Allow remote access","Increase speed"], answer: "B" },
+      { q: "Which of the following is an example of a policy layer vulnerability?", options: ["XSS attack","Weak password policy","Packet sniffing","Malware infection"], answer: "B" },
+      { q: "What is 'Responsible Disclosure'?", options: ["Hiding vulnerabilities","Exploiting vulnerabilities for profit","Reporting vulnerabilities without causing harm","Ignoring security issues"], answer: "C" },
+      { q: "What is Defense-in-Depth?", options: ["Using only one strong firewall","Eliminating all vulnerabilities","Applying multiple layers of security controls","Disabling network access"], answer: "C" }
+    ]
+  },
+  {
+    id: 'crypto',
+    name: 'Encryption Fundamentals',
+    icon: '🔐',
+    color: '#ff9500',
+    questions: [
+      { q: "A student logs into their bank account using public Wi-Fi without HTTPS. What is the most likely risk?", options: ["Man-in-the-Middle attack","Data compression failure","System crash","Slow connection"], answer: "A" },
+      { q: "A company uses symmetric encryption but shares the key through email. What is the main issue?", options: ["The key can be intercepted","Algorithm failure","Encryption is too slow","Data cannot be decrypted"], answer: "A" },
+      { q: "Why is asymmetric encryption used first in HTTPS?", options: ["Encrypts data faster","No need for keys","Securely exchanges a session key","Compresses data"], answer: "C" },
+      { q: "If a hacker gains a private key, what can they do?", options: ["Encrypt messages","Decrypt confidential data","Speed up system","Disable encryption"], answer: "B" },
+      { q: "Why is DES insecure today?", options: ["Cannot encrypt large data","Too expensive","Too complex","Weak key size"], answer: "D" },
+      { q: "Why combine symmetric and asymmetric encryption?", options: ["Reduce data size","Harder to understand","No need for keys","Combine security and efficiency"], answer: "D" },
+      { q: "Browser says 'Connection not secure'. What should you do?", options: ["Refresh","Continue","Avoid entering sensitive data","Ignore"], answer: "C" },
+      { q: "Hacker intercepts encrypted data but cannot read it. What does this mean?", options: ["Data corrupted","System offline","Encryption failed","Encryption ensures confidentiality"], answer: "D" },
+      { q: "What happens if encryption keys are reused repeatedly?", options: ["More vulnerable","Better performance","Faster encryption","Less storage"], answer: "A" },
+      { q: "Using only asymmetric encryption for large files causes?", options: ["Key mismatch","Data loss","No encryption","Slow performance"], answer: "D" }
+    ]
+  },
+  {
+    id: 'threats',
+    name: 'Network Threats & Attack Surface',
+    icon: '⚠️',
+    color: '#ff2d55',
+    questions: [
+      { q: "What is a network threat?", options: ["A software update","A malicious act to compromise or disrupt systems","A type of firewall","A secure connection"], answer: "B" },
+      { q: "Which of the following is an example of a network threat?", options: ["Backup system","Antivirus update","Phishing","Data encryption"], answer: "C" },
+      { q: "What does the CIA Triad stand for?", options: ["Control, Internet, Access","Confidentiality, Integrity, Availability","Cybersecurity, Information, Authorization","Code, Inspection, Analysis"], answer: "B" },
+      { q: "What does 'Confidentiality' mean in cybersecurity?", options: ["Data is always available","Data is shared publicly","Data is protected from unauthorized access","Data is deleted regularly"], answer: "C" },
+      { q: "Which component monitors network traffic for malicious activity?", options: ["VPN","Firewall","IDPS","NAC"], answer: "C" },
+      { q: "What is an attack surface?", options: ["A type of virus","Total number of users in a network","All possible entry points for attackers","A security software"], answer: "C" },
+      { q: "Which is NOT a type of attack surface?", options: ["Physical","Digital","Human","Virtual currency"], answer: "D" },
+      { q: "What is an attack vector?", options: ["A defense mechanism","A method used to gain unauthorized access","A type of hardware","A security policy"], answer: "B" },
+      { q: "Which of the following helps reduce attack surface?", options: ["Ignoring updates","Increasing complexity","Network segmentation","Sharing passwords"], answer: "C" },
+      { q: "Why is employee training important in cybersecurity?", options: ["To reduce internet speed","To recognize threats like phishing","To install software","To replace hardware"], answer: "B" }
+    ]
+  }
+];
+
+// ==================== IDENTIFICATION QUESTIONS ====================
+const ID_QUESTIONS = {
+  os: [
+    { q: "What is the security model that requires users to prove their identity before accessing a system?", answer: "authentication" },
+    { q: "What type of software is designed to harm or exploit computers without the user's knowledge?", answer: "malware" },
+    { q: "What term describes software flaws that attackers can exploit before a patch is available?", answer: "zero-day vulnerability" },
+    { q: "What is the OS component that manages access between user applications and hardware?", answer: "kernel" },
+    { q: "What is the practice of giving users only the minimum access they need to perform their job?", answer: "least privilege" }
+  ],
+  risk: [
+    { q: "What do you call the process of identifying, assessing, and controlling threats to an organization?", answer: "risk management" },
+    { q: "What is the term for a weakness in a system that can be exploited by a threat?", answer: "vulnerability" },
+    { q: "What document outlines an organization's rules for protecting its information assets?", answer: "security policy" },
+    { q: "What is the NIST framework used for managing cybersecurity risks?", answer: "NIST Cybersecurity Framework" },
+    { q: "What risk treatment strategy involves moving risk to another party (e.g., insurance)?", answer: "risk transfer" }
+  ],
+  web: [
+    { q: "What security model verifies identity at every step and never trusts by default?", answer: "zero trust" },
+    { q: "What type of attack allows attackers to inject malicious SQL code into a web query?", answer: "SQL injection" },
+    { q: "What does HTTPS use to establish a secure, encrypted connection?", answer: "TLS" },
+    { q: "What is the practice of including security early in the software development lifecycle called?", answer: "shift-left" },
+    { q: "What threat model framework uses Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege?", answer: "STRIDE" }
+  ],
+  netvuln: [
+    { q: "What attack tricks users into revealing credentials by impersonating a trusted source?", answer: "phishing" },
+    { q: "What type of attack floods a system with traffic to make it unavailable?", answer: "DDoS" },
+    { q: "What is the three-part security model of Confidentiality, Integrity, and Availability?", answer: "CIA Triad" },
+    { q: "What attack intercepts communication between two parties?", answer: "Man-in-the-Middle" },
+    { q: "What is the ethical practice of reporting vulnerabilities to organizations without causing harm?", answer: "responsible disclosure" }
+  ],
+  crypto: [
+    { q: "What encryption method uses the same key for both encryption and decryption?", answer: "symmetric encryption" },
+    { q: "What encryption method uses a public key to encrypt and a private key to decrypt?", answer: "asymmetric encryption" },
+    { q: "What protocol secures web communication by encrypting data between browser and server?", answer: "HTTPS" },
+    { q: "What is the old encryption standard replaced by AES due to its weak 56-bit key?", answer: "DES" },
+    { q: "What do you call a random value added to a password before hashing to prevent rainbow table attacks?", answer: "salt" }
+  ],
+  threats: [
+    { q: "What is the collective term for all possible entry points an attacker could use to access a system?", answer: "attack surface" },
+    { q: "What is a method or path that attackers use to gain unauthorized access to a system?", answer: "attack vector" },
+    { q: "What security strategy divides a network into segments to limit the spread of attacks?", answer: "network segmentation" },
+    { q: "What is the term for malicious software that encrypts a victim's files and demands payment?", answer: "ransomware" },
+    { q: "What system monitors network traffic for suspicious activity and can block threats automatically?", answer: "IDPS" }
+  ]
+};
+
+// ==================== [TOPICS AND ID_QUESTIONS CONSTANTS REMAIN THE SAME] ====================
+// (Keep the existing TOPICS and ID_QUESTIONS arrays as they are in your file)
+
+// ==================== GAME STATE ====================
+let state = {
+  apiKey: '',
+  selectedTopic: null,
+  selectedLevel: 1,
+  questions: [],
+  currentIndex: 0,
+  score: 0,
+  answered: false
+};
+
+// ==================== INIT & NAVIGATION ====================
+function init() {
+  // Update the label for Gemini
+  document.querySelector('.api-box label').textContent = "🔑 GOOGLE GEMINI API KEY";
+  document.getElementById('apiKey').placeholder = "AIza...";
+
+  const grid = document.getElementById('topicsGrid');
+  TOPICS.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'topic-card';
+    card.dataset.id = t.id;
+    card.innerHTML = `<span class="topic-icon">${t.icon}</span><div class="topic-name">${t.name}</div><div class="topic-count">10 questions</div>`;
+    card.onclick = () => selectTopic(t.id);
+    grid.appendChild(card);
+  });
+}
+
+function selectTopic(id) {
+  document.querySelectorAll('.topic-card').forEach(c => c.classList.toggle('selected', c.dataset.id === id));
+  state.selectedTopic = id;
+  checkCanStart();
+}
+
+function selectLevel(lvl) {
+  state.selectedLevel = lvl;
+  document.querySelectorAll('.level-btn').forEach((b,i) => b.classList.toggle('selected', i+1 === lvl));
+  checkCanStart();
+}
+
+function checkCanStart() {
+  const key = document.getElementById('apiKey').value.trim();
+  document.getElementById('startBtn').disabled = !(state.selectedTopic && key);
+}
+
+document.getElementById('apiKey').addEventListener('input', checkCanStart);
+
+function startGame() {
+  state.apiKey = document.getElementById('apiKey').value.trim();
+  const topic = TOPICS.find(t => t.id === state.selectedTopic);
+
+  if (state.selectedLevel === 1) {
+    state.questions = shuffle([...topic.questions]);
+  } else {
+    const idQs = ID_QUESTIONS[state.selectedTopic] || [];
+    state.questions = shuffle([...idQs]);
+  }
+
+  state.currentIndex = 0;
+  state.score = 0;
+  state.answered = false;
+
+  showScreen('quiz');
+  renderQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ==================== QUIZ LOGIC ====================
+function renderQuestion() {
+  const q = state.questions[state.currentIndex];
+  const total = state.questions.length;
+  state.answered = false;
+
+  document.getElementById('qNum').textContent = state.currentIndex + 1;
+  document.getElementById('qTotal').textContent = total;
+  document.getElementById('progressFill').style.width = `${(state.currentIndex / total) * 100}%`;
+  document.getElementById('scoreDisplay').textContent = state.score;
+
+  const topic = TOPICS.find(t => t.id === state.selectedTopic);
+  document.getElementById('topicTag').textContent = `📡 ${topic.name}`;
+  document.getElementById('levelTag').textContent = state.selectedLevel === 1 ? '⚡ Multiple Choice' : '🧠 Identification';
+  document.getElementById('questionText').textContent = q.q;
+
+  const feedbackPanel = document.getElementById('feedbackPanel');
+  feedbackPanel.style.display = 'none';
+  feedbackPanel.className = 'feedback-panel';
+  document.getElementById('nextBtn').style.display = 'none';
+
+  if (state.selectedLevel === 1) {
+    document.getElementById('optionsGrid').style.display = 'grid';
+    document.getElementById('idInputWrap').style.display = 'none';
+    renderOptions(q);
+  } else {
+    document.getElementById('optionsGrid').style.display = 'none';
+    document.getElementById('idInputWrap').style.display = 'flex';
+    document.getElementById('idInput').value = '';
+    document.getElementById('idInput').disabled = false;
+    document.querySelector('.submit-btn').disabled = false;
+  }
+}
+
+function renderOptions(q) {
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => handleChoice(btn, letters[i], q);
+    grid.appendChild(btn);
+  });
+}
+
+async function handleChoice(btn, chosen, q) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const letters = ['A','B','C','D'];
+  const isCorrect = chosen === q.answer;
+  if (isCorrect) state.score++;
+
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    if (letters[i] === q.answer) b.classList.add('correct');
+    else if (letters[i] === chosen && !isCorrect) b.classList.add('wrong');
+  });
+
+  document.getElementById('scoreDisplay').textContent = state.score;
+  await showFeedback(isCorrect, q.options[letters.indexOf(q.answer)], q.q, q.options[letters.indexOf(chosen)]);
+}
+
+async function submitIdentification() {
+  if (state.answered) return;
+  const input = document.getElementById('idInput').value.trim();
+  if (!input) return;
+  state.answered = true;
+  document.getElementById('idInput').disabled = true;
+  document.querySelector('.submit-btn').disabled = true;
+
+  const q = state.questions[state.currentIndex];
+  await showFeedbackIdentification(input, q.answer, q.q);
+}
+
+// ==================== GEMINI API INTEGRATION ====================
+
+async function callGemini(prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
+  
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }]
+    })
+  });
+
+  if (!response.ok) throw new Error('API request failed');
+  
+  const data = await response.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+async function showFeedback(isCorrect, correctAnswer, question, chosenAnswer) {
+  const panel = document.getElementById('feedbackPanel');
+  const header = document.getElementById('feedbackHeader');
+  const emoji = document.getElementById('feedbackEmoji');
+  const title = document.getElementById('feedbackTitle');
+  const text = document.getElementById('feedbackText');
+
+  panel.style.display = 'block';
+  panel.className = `feedback-panel ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+  header.className = `feedback-header ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+  emoji.textContent = isCorrect ? '🎉' : '😢';
+  title.textContent = isCorrect ? 'CORRECT!' : 'WRONG!';
+  text.innerHTML = '<span class="loading-text">// Gemini AI is analyzing your answer...</span>';
+
+  document.getElementById('nextBtn').style.display = 'block';
+
+  const prompt = isCorrect
+    ? `The student correctly answered "${correctAnswer}" for the cybersecurity question: "${question}". Give a brief, encouraging explanation (2 sentences) of why this is correct.`
+    : `The student answered "${chosenAnswer}" but the correct answer is "${correctAnswer}" for the question: "${question}". Give a brief, educational explanation (2 sentences) of why the correct answer is right.`;
+
+  try {
+    const explanation = await callGemini(prompt);
+    text.textContent = explanation;
+  } catch(e) {
+    text.textContent = isCorrect ? `Correct! "${correctAnswer}" is the right answer.` : `The correct answer is "${correctAnswer}".`;
+  }
+}
+
+async function showFeedbackIdentification(userAnswer, correctAnswer, question) {
+  const panel = document.getElementById('feedbackPanel');
+  const header = document.getElementById('feedbackHeader');
+  const emoji = document.getElementById('feedbackEmoji');
+  const title = document.getElementById('feedbackTitle');
+  const text = document.getElementById('feedbackText');
+
+  panel.style.display = 'block';
+  text.innerHTML = '<span class="loading-text">// Gemini AI is checking your answer...</span>';
+  document.getElementById('nextBtn').style.display = 'block';
+
+  const prompt = `You are a cybersecurity quiz judge. 
+  Question: "${question}"
+  Correct Answer: "${correctAnswer}"
+  Student's Answer: "${userAnswer}"
+  
+  Determine if the student's answer is correct (semantically equivalent). 
+  Return ONLY a JSON object: {"correct": true/false, "explanation": "2-sentence explanation"}`;
+
+  try {
+    let resultText = await callGemini(prompt);
+    // Clean potential markdown blocks
+    resultText = resultText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(resultText);
+
+    const isCorrect = parsed.correct;
+    if (isCorrect) state.score++;
+    document.getElementById('scoreDisplay').textContent = state.score;
+
+    panel.className = `feedback-panel ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+    header.className = `feedback-header ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+    emoji.textContent = isCorrect ? '🎉' : '😢';
+    title.textContent = isCorrect ? 'CORRECT!' : 'WRONG!';
+    text.textContent = parsed.explanation;
+  } catch(e) {
+    // Fallback logic
+    const isCorrect = userAnswer.toLowerCase().includes(correctAnswer.toLowerCase());
+    if (isCorrect) state.score++;
+    document.getElementById('scoreDisplay').textContent = state.score;
+    text.textContent = `The correct answer was: ${correctAnswer}`;
+  }
+}
+
+// ==================== END SCREEN LOGIC ====================
+function nextQuestion() {
+  state.currentIndex++;
+  if (state.currentIndex >= state.questions.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  showScreen('result');
+  const total = state.questions.length;
+  const pct = Math.round((state.score / total) * 100);
+  document.getElementById('resultScore').textContent = `${state.score} / ${total}`;
+
+  let emoji, title, msg;
+  if (pct === 100) { emoji='🏆'; title='PERFECT SCORE!'; msg="Outstanding! You're a true cybersecurity expert!"; }
+  else if (pct >= 70) { emoji='🥇'; title='EXCELLENT!'; msg="Great performance! You have a solid understanding of the concepts."; }
+  else { emoji='💪'; title='KEEP GOING!'; msg="Cybersecurity takes time to learn. Review and try again!"; }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = msg;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() { showScreen('home'); }
+function retryQuiz() { startGame(); }
+
+init();
+</script>
+</body>
+</html>
